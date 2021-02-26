@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.80.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>Terraform Basics - Part 1&nbsp;&ndash;&nbsp;Blog</title><link rel="stylesheet" href="/css/core.min.f50770753e7b4a1cf823b8241022bf5a6908ecbc3cfcba59bfb76af28f94cceda372fd3dad1f0b6fb6592fd79f9fc1f3.css" integrity="sha384-9QdwdT57Shz4I7gkECK/WmkI7Lw8/LpZv7dq8o&#43;UzO2jcv09rR8Lb7ZZL9efn8Hz"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Terraform Basics - Part 1" /><body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><span class="site name">Blog</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a></nav></div></span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">Terraform Basics - Part 1</h1><p class="article date">2021-01-29</p></section><article class="article markdown-body"><h1 id="building-a-web-server-on-aws-using-terraform">Building a web server on AWS using terraform</h1>
+<h2 id="in-this-post-were-gonna-build-a-simple-and-minimalistic-web-server-using-terraform-and-aws-ec2-instance">In this post, We&rsquo;re gonna build a simple and minimalistic web server using terraform and AWS EC2 instance.</h2>
+<h3 id="step-1-configure-the-provider">Step 1: Configure the Provider</h3>
+<blockquote>
+<p>General syntax for configuring a provider:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">provider</span> <span style="color:#e6db74">&#34;&lt;PROVIDER_TYPE&gt;&#34;</span> {
+    [<span style="color:#66d9ef">CONFIG</span> ...]
+}
+</code></pre></div><blockquote>
+<p>For this post, We are going to setup up aws provider and set the region to be us-east-1.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">provider</span> <span style="color:#e6db74">&#34;aws&#34;</span> {
+    region <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;us-east-1&#34;</span>
+}
+</code></pre></div><h3 id="step-2-initializing-terraform">Step 2: Initializing Terraform</h3>
+<blockquote>
+<p>After setting up the provider, We have to download the terraform plugin for AWS.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">terraform init
+</code></pre></div><h3 id="step-3-defining-the-resources-to-be-provisioned">Step 3: Defining the resources to be provisioned</h3>
+<blockquote>
+<p>General syntax for configuring a resource:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;&lt;PROVIDER_RESOURCE_TYPE&gt;&#34; &#34;&lt;NAME&gt;&#34;</span> {
+    [<span style="color:#66d9ef">CONFIG</span> ...]
+}
+</code></pre></div><blockquote>
+<p>For the web server, we have to create a security group for accessing the server through internet. In this example, for serving web content we&rsquo;re going to open port 80 for ingress and egress.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_security_group&#34; &#34;my_sec_grp&#34;</span> {
+    name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;terraform-sec-grp&#34;</span>
+
+    <span style="color:#66d9ef">ingress</span> {
+        from_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">80</span>
+        to_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">80</span>
+        protocol <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;tcp&#34;</span>
+        cidr_blocks <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>]
+    }
+
+    <span style="color:#66d9ef">egress</span> {
+        from_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+        to_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+        protocol <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;-1&#34;</span>
+        cidr_blocks <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>]
+    }
+}
+</code></pre></div><blockquote>
+<p>Now We have to define the server configuration for the AWS EC2 isntance and attach the security group.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_instance&#34; &#34;my_web_server&#34;</span> {
+    ami <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ami-04d29b6f966df1537&#34;</span>
+    instance_type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;t2.micro&#34;</span>
+    vpc_security_group_ids <span style="color:#f92672">=</span> [ <span style="color:#66d9ef">aws_security_group</span>.<span style="color:#66d9ef">my_sec_grp</span>.<span style="color:#66d9ef">id</span> ]
+
+    user_data   <span style="color:#f92672">=</span> <span style="color:#66d9ef">file</span>(<span style="color:#e6db74">&#34;start_server.sh&#34;</span>)
+
+    tags <span style="color:#f92672">=</span> {
+        name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;terraform-web-server&#34;</span>
+    }
+}
+</code></pre></div><blockquote>
+<p>The <em>start_server.sh</em> file contains shell commands to install apache, create an index.html file and run the server.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#75715e">#!/bin/bash
+</span><span style="color:#75715e"></span>sudo yum update -y
+sudo yum install httpd -y
+sudo service httpd start
+echo <span style="color:#e6db74">&#34;Hey&#34;</span> &gt; index.html
+sudo mv index.html /var/www/html/
+</code></pre></div><h3 id="step-4-output-the-public-ip-of-the-server">Step 4: Output the public ip of the server.</h3>
+<blockquote>
+<p>General syntax for setting up an output variable:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">output</span> <span style="color:#e6db74">&#34;&lt;NAME&gt;&#34;</span> {
+    [<span style="color:#66d9ef">VALUE</span>]
+    [<span style="color:#66d9ef">DESC</span>]
+}
+</code></pre></div><blockquote>
+<p>We now need the IP address of the server to access it, so we have to create a output configuration for the web server</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">output</span> <span style="color:#e6db74">&#34;public_ip&#34;</span> {
+    value <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_instance</span>.<span style="color:#66d9ef">my_web_server</span>.<span style="color:#66d9ef">public_ip</span>
+    description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Public IP of the server&#34;</span>
+}
+</code></pre></div><h3 id="step-5-applying-the-configuration">Step 5: Applying the configuration:</h3>
+<blockquote>
+<p>Now we have to apply this terraform configuration to the AWS.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">terraform apply
+</code></pre></div><blockquote>
+<p>At the end, terraform outputs a public ip address that directs to the web server.</p>
+</blockquote>
+<h3 id="checking-the-server">Checking the server</h3>
+<blockquote>
+<p>Do a get request using curl on the web server&rsquo;s IP.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">curl &lt;IP_OF_THE_WEB_SERVER&gt;
+</code></pre></div><p>This outputs:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">Hey
+</code></pre></div><h3 id="step-5-cleaning-up">Step 5: Cleaning up</h3>
+<blockquote>
+<p>To delete all the resources created using terraform:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">terraform destroy
+</code></pre></div><h3 id="extras">Extras:</h3>
+<blockquote>
+<p>Its always a bad practice to hard code anything, In this case the Port number. Its manually referenced in several places. For this we can use terraform variables.</p>
+</blockquote>
+<blockquote>
+<p>General syntax for declaring a variable:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl">
+<span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;NAME&#34;</span> {
+    [<span style="color:#66d9ef">CONFIG</span> ...]
+}
+
+</code></pre></div><blockquote>
+<p>So instead of hard coding it, we can say,</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl"><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;server_port&#34;</span> {
+    description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;The port that server will use for HTTP requests&#34;</span>
+    type <span style="color:#f92672">=</span> <span style="color:#66d9ef">number</span>
+    default <span style="color:#f92672">=</span> <span style="color:#ae81ff">80</span>
+}
+</code></pre></div><blockquote>
+<p>The we can replace all the places where we used <em>80</em> with this variable,
+For eg: <em>form_port</em> in security group.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-hcl" data-lang="hcl">    from_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">server_port</span>
+</code></pre></div><blockquote>
+<p>Terraform will asks for this variable&rsquo;s value when we execute terraform apply, we can always give a number there or we can do,</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">terraform plan -var <span style="color:#e6db74">&#34;server_port=80&#34;</span>
+</code></pre></div><blockquote>
+<p>or</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">export  TF_VAR_server_port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
+terraform plan
+</code></pre></div></article><section class="article labels"><a class="category" href=/categories/terraform/>terraform</a><a class="tag" href=/tags/terraform/>terraform</a><a class="tag" href=/tags/iac/>IaC</a><a class="tag" href=/tags/aws/>AWS</a></section>
+</div>
+<div class="article bottom"></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">No Copyrights</p>
+    <p class="powerby"><span>Powered&nbsp;by&nbsp;</span><a href="https://gohugo.io" 
+        target="_blank" rel="noopener noreferrer">Hugo</a><span>&nbsp;&amp;&nbsp;</span><a href="https://themes.gohugo.io/hugo-notepadium/" 
+        target="_blank" rel="noopener noreferrer">Notepadium</a></p></div>
+</section></body>
+
+</html>
